@@ -2,7 +2,6 @@ package domain
 
 import (
 	"errors"
-	"gonum.org/v1/gonum/optimize"
 )
 
 // Config представляет конфигурацию приложения
@@ -22,14 +21,12 @@ type Config struct {
 
 func (c *Config) GetMethod() OptimizationMethod {
 	switch c.Method {
-	case "newton":
-		return MethodNewton
-	case "lbfgs":
-		return MethodLBFGS
+
 	case "nelder-mead":
 		return MethodNelderMead
 	case "gradient":
-		return MethodGradient
+		return MethodGradientDescent
+
 	default:
 		return MethodNelderMead
 	}
@@ -100,26 +97,30 @@ type Parameters struct {
 type OptimizationMethod int
 
 const (
-	MethodNewton OptimizationMethod = iota
-	MethodLBFGS
-	MethodNelderMead
-	MethodGradient
+	MethodNelderMead OptimizationMethod = iota
+	MethodGradientDescent
 )
 
-func (m OptimizationMethod) ToGonumMethod() optimize.Method {
-	switch m {
-	case MethodNewton:
-		return &optimize.Newton{}
-	case MethodLBFGS:
-		return &optimize.LBFGS{}
-	case MethodNelderMead:
-		return &optimize.NelderMead{}
-	case MethodGradient:
-		return &optimize.GradientDescent{}
-	default:
-		return &optimize.LBFGS{}
-	}
-}
+// func (m OptimizationMethod) ToGonumMethod() optimize.Method {
+// 	switch m {
+// 	case MethodConjugateGradient:
+// 		return &optimize.CG{}
+// 	case MethodLBFGS:
+// 		return &optimize.LBFGS{}
+// 	case MethodNelderMead:
+// 		return &optimize.NelderMead{}
+// 	case MethodGradient:
+// 		return &optimize.GradientDescent{}
+// 	case MethodBFGS:
+// 		return &optimize.BFGS{}
+// 	// case MethodFletcherReeves:
+// 	// 	return &optimize.FletcherReeves{}
+// 	// case MethodHagerZhang:
+// 	// 	return &optimize.HagerZhang{}
+// 	default:
+// 		return &optimize.NelderMead{}
+// 	}
+// }
 
 var (
 	ErrInvalidFileFormat = errors.New("invalid file format")

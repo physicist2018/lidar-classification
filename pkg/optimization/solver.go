@@ -6,9 +6,12 @@ import (
 	"math/rand"
 	"sort"
 
+	"github.com/physicist2018/optimization-go/optimization"
 	"go.uber.org/zap"
-	"gonum.org/v1/gonum/diff/fd"
-	"gonum.org/v1/gonum/optimize"
+)
+
+const (
+	HUGE_VAL = 1000000000.0
 )
 
 type MonteCarloOptimizer struct {
@@ -72,79 +75,30 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW float64,
 	config *domain.Config) (domain.Fractions, float64) {
 
-	Func := func(x []float64) float64 {
-		// x = [n_d, n_u, n_s, n_w]
-		if len(x) != 4 {
-			return math.Inf(1)
-		}
+	nmConf := optimization.DefaultNelderMeadConfig()
+	opt := optimization.NewOptimizedNelderMead(nmConf)
 
-		nd, nu, ns, nw := x[0], x[1], x[2], x[3]
-
-		// Ограничения неотрицательности
-		if nd < 0 || nu < 0 || ns < 0 || nw < 0 {
-			return math.Inf(1)
-		}
-
-		// Вычисляем V_k
-		vd := nd * config.LR.D * config.CV.D
-		vu := nu * config.LR.U * config.CV.U
-		vs := ns * config.LR.S * config.CV.S
-		vw := nw * config.LR.W * config.CV.W
-		vTotal := vd + vu + vs + vw
-
-		// Уравнения
-		eq1 := nd + nu + ns + nw - 1.0 // Сумма долей = 1
-		eq2 := deltaPrimeD*nd + deltaPrimeU*nu + deltaPrimeS*ns + deltaPrimeW*nw - data.DeltaPrime
-		eq3 := params.GfD*nd + params.GfU*nu + params.GfS*ns + params.GfW*nw - data.Gf
-
-		var eq4 float64
-		if vTotal > 0 {
-			mCalc := (config.M.D*vd + config.M.U*vu + config.M.S*vs + config.M.W*vw) / vTotal
-			eq4 = mCalc - data.M
-		} else {
-			eq4 = math.Inf(1)
-		}
-
-		// Невязка как норма Фробениуса относительных отклонений
-		residual := math.Sqrt(
-			math.Pow(eq1/1.0, 2) +
-				math.Pow(eq2/data.DeltaPrime, 2) +
-				math.Pow(eq3/data.Gf, 2) +
-				math.Pow(eq4/data.M, 2))
-		o.logger.Debug("Residual", zap.Float64("residual", residual))
-		return residual
-	}
-	// Grad вычисляет градиент функции в точке x и сохраняет результат в grad
-	Grad := func(grad, x []float64) {
-		// Проверка размерности
-		if len(grad) != 4 || len(x) != 4 {
-			for i := range grad {
-				grad[i] = math.NaN()
-			}
-			return
-		}
-
-		// Конфигурация для численного дифференцирования
-		settings := &fd.Settings{
-			Formula: fd.Central, // Центральные разности для большей точности
-			Step:    1e-6,       // Шаг дифференцирования
-		}
-
-		// Вычисляем градиент численно
-		fd.Gradient(grad, Func, x, settings)
-	}
-	problem := optimize.Problem{
-		Func: Func,
-		Grad: Grad,
-	}
+	costFunc := NewCostFunction(
+		o.logger,
+		data,
+		params,
+		deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW,
+		config,
+	)
 
 	// Начальное приближение - равные доли
 	initial := []float64{0.25, 0.25, 0.25, 0.25}
+	result := opt.Optimize(costFunc, initial)
 
-	result, err := optimize.Minimize(problem, initial, nil, config.GetMethod().ToGonumMethod())
-	if err != nil {
-		return domain.Fractions{}, math.Inf(1)
-	}
+	// result, err := optimize.Minimize(problem, initial, &optimize.Settings{
+	// 	Converger: &optimize.FunctionConverge{
+	// 		Absolute:   1e-5,
+	// 		Iterations: 100,
+	// 	},
+	// }, config.GetMethod().ToGonumMethod())
+	// if err != nil {
+	// 	return domain.Fractions{}, math.Inf(1)
+	// }
 
 	fractions := domain.Fractions{
 		D: math.Max(0, result.X[0]),
@@ -162,7 +116,7 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 		fractions.W /= sum
 	}
 
-	return fractions, result.F
+	return fractions, result.Value
 }
 
 func (o *MonteCarloOptimizer) generateRandomParameters(config *domain.Config) *domain.Parameters {

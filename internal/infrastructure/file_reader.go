@@ -2,11 +2,13 @@ package infrastructure
 
 import (
 	"bufio"
-	"go.uber.org/zap"
 	"lidar-classification/internal/domain"
+	"math"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 type TXTFileReader struct {
@@ -64,6 +66,10 @@ func (r *TXTFileReader) ReadMatrix(filename string) (*domain.MatrixData, error) 
 			value, err := strconv.ParseFloat(fields[j], 64)
 			if err != nil {
 				return nil, err
+			}
+			if value < 0 {
+				r.logger.Warn("Negative value found, replaced with NaN", zap.Float64("value", value))
+				value = math.NaN()
 			}
 			row = append(row, value)
 		}

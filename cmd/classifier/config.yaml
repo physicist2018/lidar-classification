@@ -29,5 +29,5 @@ NSamples: 100
 N1: 10
 epsilon: 0.2
 workers: 4
-log_level: info
-method: nelder-mead
+log_level: debug
+method: gradient
