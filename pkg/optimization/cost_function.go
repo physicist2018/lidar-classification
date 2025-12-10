@@ -62,12 +62,30 @@ func (c *CostFunction) Value(x []float64) float64 {
 	}
 
 	// Невязка как норма Фробениуса относительных отклонений
+	eps1 := math.Pow(eq1/1.0, 2)
+	eps2 := math.Pow(eq2/c.data.DeltaPrime, 2)
+	eps3 := math.Pow(eq3/c.data.Gf, 2)
+	eps4 := math.Pow(eq4/c.data.M, 2)
+
 	residual := math.Sqrt(
-		math.Pow(eq1/1.0, 2) +
-			math.Pow(eq2/c.data.DeltaPrime, 2) +
-			math.Pow(eq3/c.data.Gf, 2) +
-			math.Pow(eq4/c.data.M, 2))
-	c.logger.Debug("Residual", zap.Float64("", residual*100))
+		eps1 + eps2 + eps3 + eps4)
+	if eps1 > 0.01 {
+		residual += HUGE_VAL
+	}
+	// if eps2 > 0.01 {
+	// 	residual += HUGE_VAL
+	// }
+	// if eps3 > 0.01 {
+	// 	residual += HUGE_VAL
+	// }
+	// if eps4 > 0.01 {
+	// 	residual += HUGE_VAL
+	// }
+	c.logger.Debug("Residuals:", zap.Float64("eps_n", eps1),
+		zap.Float64("eps_delta", eps2),
+		zap.Float64("eps_gf", eps3),
+		zap.Float64("eps_m", eps4),
+		zap.Float64("residual", residual))
 	return residual
 }
 
