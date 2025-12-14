@@ -2,11 +2,12 @@ package main
 
 import (
 	"flag"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"lidar-classification/internal/app"
 	"lidar-classification/internal/domain"
 	"lidar-classification/internal/infrastructure"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	// Обновляем уровень логирования
-	logger = initLogger(config.LogLevel)
+	logger = initLogger(config.LogLevel, config.LogFile)
 
 	// Инициализация компонентов
 	fileReader := infrastructure.NewTXTFileReader(logger)
@@ -98,7 +99,8 @@ func main() {
 	logger.Info("Aerosol classification completed successfully")
 }
 
-func initLogger(level string) *zap.Logger {
+// initLogger initializes the logger with the specified level and log file name.
+func initLogger(level string, logfileName ...string) *zap.Logger {
 	config := zap.NewProductionConfig()
 
 	switch level {
@@ -112,8 +114,17 @@ func initLogger(level string) *zap.Logger {
 		config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	}
 
-	config.EncoderConfig.TimeKey = "time"
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	outputPath := make([]string, len(logfileName)+1)
+	for i, item := range logfileName {
+		outputPath[i] = item
+	}
+	outputPath[len(logfileName)] = "stderr"
+
+	config.OutputPaths = outputPath
+	config.ErrorOutputPaths = outputPath
+	config.EncoderConfig.TimeKey = "t"
+	config.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+	config.DisableCaller = false
 
 	logger, _ := config.Build()
 	return logger

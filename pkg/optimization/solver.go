@@ -25,13 +25,15 @@ func NewMonteCarloOptimizer(logger *zap.Logger) *MonteCarloOptimizer {
 func (o *MonteCarloOptimizer) Solve(data *domain.PointData, config *domain.Config) *domain.Solution {
 	var samples []*domain.Solution
 
-	for k := 0; k < config.NSamples; k++ {
+	for _ = range config.NSamples {
 		sample := o.generateRandomSample(data, config)
-		if sample.IsValid && sample.Residual <= config.Epsilon {
+		// здесь не обязательно проверять попадание в eps && sample.Residual <= config.Epsilon
+		if sample.IsValid {
 			samples = append(samples, sample)
 		}
 	}
 
+	o.logger.Info("number of samples with valid solution", zap.Int("count", len(samples)))
 	if len(samples) == 0 {
 		return &domain.Solution{IsValid: false}
 	}
@@ -41,8 +43,16 @@ func (o *MonteCarloOptimizer) Solve(data *domain.PointData, config *domain.Confi
 		return samples[i].Residual < samples[j].Residual
 	})
 
+	// в отсортированном массиме ищем количество решений где невязка не inf
+	count := 0
+	for _, sample := range samples {
+		if !math.IsInf(sample.Residual, 1) {
+			count++
+		}
+	}
+	o.logger.Info("count", zap.Int("count", count))
 	// Берем лучшие N1 решений
-	n1 := min(config.N1, len(samples))
+	n1 := min(config.N1, count)
 	bestSamples := samples[:n1]
 
 	// Усредняем результаты
@@ -61,13 +71,14 @@ func (o *MonteCarloOptimizer) generateRandomSample(data *domain.PointData, confi
 	// Решаем систему уравнений
 	fractions, residual := o.solveSystem(data, params, deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW, config)
 
+	//&& residual <= config.Epsilon &&
+	// fractions.D >= 0 && fractions.U >= 0 && fractions.S >= 0 && fractions.W >= 0 &&
+	// math.Abs(fractions.D+fractions.U+fractions.S+fractions.W-1.0) <= 0.05
 	return &domain.Solution{
 		Residual:   residual,
 		Fractions:  fractions,
 		Parameters: *params,
-		IsValid: residual >= 0 && residual <= config.Epsilon &&
-			fractions.D >= 0 && fractions.U >= 0 && fractions.S >= 0 && fractions.W >= 0 &&
-			math.Abs(fractions.D+fractions.U+fractions.S+fractions.W-1.0) <= 0.05,
+		IsValid:    residual >= 0,
 	}
 }
 
@@ -75,8 +86,21 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW float64,
 	config *domain.Config) (domain.Fractions, float64) {
 
-	nmConf := optimization.DefaultNelderMeadConfig()
-	opt := optimization.NewOptimizedNelderMead(nmConf)
+	var opt optimization.Optimizer
+	//nmConf := optimization.DefaultNelderMeadConfig()
+	//opt := optimization.NewOptimizedNelderMead(nmConf)
+
+	switch config.GetOptMethod() {
+	case domain.MethodNelderMead:
+		nmConf := optimization.DefaultNelderMeadConfig()
+		opt = optimization.NewOptimizedNelderMead(nmConf)
+	case domain.MethodGradientDescent:
+		gdConf := optimization.DefaultGradientDescentConfig()
+		opt = optimization.NewOptimizedGradientDescent(gdConf)
+	case domain.MethodSimulatedAnnealing:
+		saConf := optimization.DefaultSimulatedAnnealingConfig()
+		opt = optimization.NewSimulatedAnnealing(saConf)
+	}
 
 	costFunc := NewCostFunction(
 		o.logger,
@@ -90,21 +114,18 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	initial := []float64{0.25, 0.25, 0.25, 0.25}
 	result := opt.Optimize(costFunc, initial)
 
-	// result, err := optimize.Minimize(problem, initial, &optimize.Settings{
-	// 	Converger: &optimize.FunctionConverge{
-	// 		Absolute:   1e-5,
-	// 		Iterations: 100,
-	// 	},
-	// }, config.GetMethod().ToGonumMethod())
-	// if err != nil {
-	// 	return domain.Fractions{}, math.Inf(1)
-	// }
+	o.logger.Debug("Optimization result:", zap.Any("result", result))
 
 	fractions := domain.Fractions{
-		D: math.Max(0, result.X[0]),
-		U: math.Max(0, result.X[1]),
-		S: math.Max(0, result.X[2]),
-		W: math.Max(0, result.X[3]),
+		D: result.X[0],
+		U: result.X[1],
+		S: result.X[2],
+		W: result.X[3],
+	}
+
+	// Если хотя бы одна доля отрицательная, result.Value делаем Inf()
+	if fractions.D < 0 || fractions.U < 0 || fractions.S < 0 || fractions.W < 0 {
+		return fractions, math.Inf(1)
 	}
 
 	// Нормализуем доли

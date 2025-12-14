@@ -6,26 +6,30 @@ import (
 
 // Config представляет конфигурацию приложения
 type Config struct {
-	LR         LRCoeffs   `yaml:"LR"`
-	CV         CVCoeffs   `yaml:"CV"`
-	M          MCoeffs    `yaml:"m"`
-	DeltaRange TypeRanges `yaml:"delta_range"`
-	GfRange    TypeRanges `yaml:"Gf_range"`
-	NSamples   int        `yaml:"NSamples"`
-	N1         int        `yaml:"N1"`
-	Epsilon    float64    `yaml:"epsilon"`
-	Workers    int        `yaml:"workers"`
-	LogLevel   string     `yaml:"log_level"`
-	Method     string     `yaml:"method"`
+	LR           LRCoeffs   `yaml:"LR"`
+	CV           CVCoeffs   `yaml:"CV"`
+	M            MCoeffs    `yaml:"m"`
+	DeltaRange   TypeRanges `yaml:"delta_range"`
+	GfRange      TypeRanges `yaml:"Gf_range"`
+	NSamples     int        `yaml:"NSamples"`
+	N1           int        `yaml:"N1"`
+	Epsilon      float64    `yaml:"epsilon"`
+	Workers      int        `yaml:"workers"`
+	LogLevel     string     `yaml:"log_level"`
+	Method       string     `yaml:"method"`
+	LogFile      string     `yaml:"log_file"`
+	CostFunction string     `yaml:"cost_function"`
 }
 
-func (c *Config) GetMethod() OptimizationMethod {
+func (c *Config) GetOptMethod() OptimizationMethod {
 	switch c.Method {
 
 	case "nelder-mead":
 		return MethodNelderMead
 	case "gradient":
 		return MethodGradientDescent
+	case "simulated-annealing":
+		return MethodSimulatedAnnealing
 
 	default:
 		return MethodNelderMead
@@ -91,6 +95,7 @@ type Fractions struct {
 type Parameters struct {
 	GfD, GfU, GfS, GfW             float64
 	DeltaD, DeltaU, DeltaS, DeltaW float64
+	// MreD, MreU, MreS, MreW         float64
 }
 
 // OptimizationMethod представляет метод оптимизации
@@ -99,28 +104,8 @@ type OptimizationMethod int
 const (
 	MethodNelderMead OptimizationMethod = iota
 	MethodGradientDescent
+	MethodSimulatedAnnealing
 )
-
-// func (m OptimizationMethod) ToGonumMethod() optimize.Method {
-// 	switch m {
-// 	case MethodConjugateGradient:
-// 		return &optimize.CG{}
-// 	case MethodLBFGS:
-// 		return &optimize.LBFGS{}
-// 	case MethodNelderMead:
-// 		return &optimize.NelderMead{}
-// 	case MethodGradient:
-// 		return &optimize.GradientDescent{}
-// 	case MethodBFGS:
-// 		return &optimize.BFGS{}
-// 	// case MethodFletcherReeves:
-// 	// 	return &optimize.FletcherReeves{}
-// 	// case MethodHagerZhang:
-// 	// 	return &optimize.HagerZhang{}
-// 	default:
-// 		return &optimize.NelderMead{}
-// 	}
-// }
 
 var (
 	ErrInvalidFileFormat = errors.New("invalid file format")

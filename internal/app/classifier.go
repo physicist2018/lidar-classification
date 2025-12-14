@@ -31,16 +31,16 @@ func (c *AerosolClassifier) ProcessMatrices(depData, flData, mreData *domain.Mat
 	resultChan := make(chan *domain.ProcessingResult, depData.Rows*depData.Cols)
 
 	// Запускаем воркеры
-	for i := 0; i < c.config.Workers; i++ {
+	for i := range c.config.Workers {
 		wg.Add(1)
-		c.logger.Debug("Starting worker", zap.Int("id", i))
+		c.logger.Info("Starting worker", zap.Int("id", i))
 		go c.worker(i, taskChan, resultChan, &wg)
 	}
 
 	// Отправляем задачи
 	go func() {
-		for i := 0; i < depData.Rows; i++ {
-			for j := 0; j < depData.Cols; j++ {
+		for i := range depData.Rows {
+			for j := range depData.Cols {
 				pointData := c.preparePointData(i, j, depData, flData, mreData)
 				if c.validatePointData(pointData) {
 					task := domain.ProcessingTask{
@@ -148,8 +148,8 @@ func (c *AerosolClassifier) updateResults(results map[string]*domain.MatrixData,
 	results["GF_u"].Data[i][j] = sol.Parameters.GfU
 	results["GF_s"].Data[i][j] = sol.Parameters.GfS
 	results["GF_w"].Data[i][j] = sol.Parameters.GfW
-	results["delta_d"].Data[i][j] = sol.Parameters.DeltaD
-	results["delta_u"].Data[i][j] = sol.Parameters.DeltaU
-	results["delta_s"].Data[i][j] = sol.Parameters.DeltaS
-	results["delta_w"].Data[i][j] = sol.Parameters.DeltaW
+	results["delta_d"].Data[i][j] = sol.Parameters.DeltaD / (1 - sol.Parameters.DeltaD)
+	results["delta_u"].Data[i][j] = sol.Parameters.DeltaU / (1 - sol.Parameters.DeltaU)
+	results["delta_s"].Data[i][j] = sol.Parameters.DeltaS / (1 - sol.Parameters.DeltaS)
+	results["delta_w"].Data[i][j] = sol.Parameters.DeltaW / (1 - sol.Parameters.DeltaW)
 }
