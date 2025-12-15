@@ -1,24 +1,25 @@
 LR:
-  d: 38
-  u: 87
-  s: 90
+  d: 49
+  u: 46
+  s: 65
   w: 33
 CV:
-  d: 0.1
-  u: 0.9
-  s: 0.2
-  w: 1.2
-m:
-  d: 1.5
-  u: 1.45
-  s: 1.56
-  w: 1.33
+  d: 0.07
+  u: 0.08
+  s: 0.085
+  w: 0.12
 
 Gf_range:
-  d: [0.000010, 0.000050]
-  u: [0.000010, 0.000100]
-  s: [0.000200, 0.000600]
-  w: [0.00005, 0.000010]
+  d: [1e-5, 1e-4]
+  u: [1e-5, 1e-4]
+  s: [2e-4, 1e-3]
+  w: [1e-9, 1e-5]
+
+m_range:
+  d: [1.40, 1.45]
+  u: [1.55, 1.53]
+  s: [1.51, 1.54]
+  w: [1.33, 1.35]
 
 delta_range:
   d: [0.20, 0.35]
@@ -27,7 +28,10 @@ delta_range:
   w: [0.001, 0.01]
 NSamples: 100
 N1: 10
-epsilon: 0.2
-workers: 4
+epsilon: 0.15
+workers: 7
 log_level: debug
-method: gradient
+method: nelder-mead
+log_file: log.txt
+decimals_default: 2
+decimals_gf: 6
