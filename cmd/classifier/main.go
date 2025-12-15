@@ -5,6 +5,8 @@ import (
 	"lidar-classification/internal/app"
 	"lidar-classification/internal/domain"
 	"lidar-classification/internal/infrastructure"
+	"strconv"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -83,10 +85,29 @@ func main() {
 		"delta_u":   "delta_u.txt",
 		"delta_s":   "delta_s.txt",
 		"delta_w":   "delta_w.txt",
+		"mre_d":     "mre_d.txt",
+		"mre_u":     "mre_u.txt",
+		"mre_s":     "mre_s.txt",
+		"mre_w":     "mre_w.txt",
 	}
 
+	fmtGf := func(val float64) string {
+		return strconv.FormatFloat(val, 'f', config.DecimalsGf, 64)
+	}
+
+	fmgDefault := func(val float64) string {
+		return strconv.FormatFloat(val, 'f', config.DecimalsDefault, 64)
+	}
+
+	var fmtStr infrastructure.FmtFunc
 	for key, filename := range outputFiles {
-		if err := fileWriter.WriteMatrix(filename, results[key]); err != nil {
+		if strings.HasPrefix(key, "GF") {
+			fmtStr = fmtGf
+		} else {
+			fmtStr = fmgDefault
+		}
+
+		if err := fileWriter.WriteMatrix(filename, results[key], fmtStr); err != nil {
 			logger.Error("Failed to write result",
 				zap.String("file", filename),
 				zap.Error(err))
@@ -114,11 +135,10 @@ func initLogger(level string, logfileName ...string) *zap.Logger {
 		config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	}
 
-	outputPath := make([]string, len(logfileName)+1)
+	outputPath := make([]string, len(logfileName))
 	for i, item := range logfileName {
 		outputPath[i] = item
 	}
-	outputPath[len(logfileName)] = "stderr"
 
 	config.OutputPaths = outputPath
 	config.ErrorOutputPaths = outputPath

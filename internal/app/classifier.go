@@ -116,6 +116,7 @@ func (c *AerosolClassifier) initializeResultMatrices(rows, cols int) map[string]
 		"residuals", "n_d", "n_u", "n_s", "n_w",
 		"GF_d", "GF_u", "GF_s", "GF_w",
 		"delta_d", "delta_u", "delta_s", "delta_w",
+		"mre_d", "mre_u", "mre_s", "mre_w",
 	}
 
 	for _, name := range outputFiles {
@@ -152,4 +153,8 @@ func (c *AerosolClassifier) updateResults(results map[string]*domain.MatrixData,
 	results["delta_u"].Data[i][j] = sol.Parameters.DeltaU / (1 - sol.Parameters.DeltaU)
 	results["delta_s"].Data[i][j] = sol.Parameters.DeltaS / (1 - sol.Parameters.DeltaS)
 	results["delta_w"].Data[i][j] = sol.Parameters.DeltaW / (1 - sol.Parameters.DeltaW)
+	results["mre_d"].Data[i][j] = sol.Parameters.MreD
+	results["mre_u"].Data[i][j] = sol.Parameters.MreU
+	results["mre_s"].Data[i][j] = sol.Parameters.MreS
+	results["mre_w"].Data[i][j] = sol.Parameters.MreW
 }

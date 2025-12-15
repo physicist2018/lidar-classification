@@ -50,13 +50,17 @@ func (o *MonteCarloOptimizer) Solve(data *domain.PointData, config *domain.Confi
 			count++
 		}
 	}
-	o.logger.Info("count", zap.Int("count", count))
+
 	// Берем лучшие N1 решений
 	n1 := min(config.N1, count)
+	o.logger.Info("average count", zap.Int("count", n1))
 	bestSamples := samples[:n1]
 
 	// Усредняем результаты
-	return o.averageSolutions(bestSamples)
+	avg := o.averageSolutions(bestSamples)
+	o.logger.Info("best", zap.Any("X", avg))
+	return avg
+
 }
 
 func (o *MonteCarloOptimizer) generateRandomSample(data *domain.PointData, config *domain.Config) *domain.Solution {
@@ -78,7 +82,7 @@ func (o *MonteCarloOptimizer) generateRandomSample(data *domain.PointData, confi
 		Residual:   residual,
 		Fractions:  fractions,
 		Parameters: *params,
-		IsValid:    residual >= 0,
+		IsValid:    residual >= 0 && residual < config.Epsilon,
 	}
 }
 
@@ -93,10 +97,13 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	switch config.GetOptMethod() {
 	case domain.MethodNelderMead:
 		nmConf := optimization.DefaultNelderMeadConfig()
+		nmConf.Tolerance = 1e-5
 		opt = optimization.NewOptimizedNelderMead(nmConf)
 	case domain.MethodGradientDescent:
 		gdConf := optimization.DefaultGradientDescentConfig()
-		opt = optimization.NewOptimizedGradientDescent(gdConf)
+		gdConf.Tolerance = 1e-5
+		gdConf.UseRMSprop = true
+		opt = optimization.NewAdaptiveGradientDescent(gdConf)
 	case domain.MethodSimulatedAnnealing:
 		saConf := optimization.DefaultSimulatedAnnealingConfig()
 		opt = optimization.NewSimulatedAnnealing(saConf)
@@ -124,18 +131,18 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	}
 
 	// Если хотя бы одна доля отрицательная, result.Value делаем Inf()
-	if fractions.D < 0 || fractions.U < 0 || fractions.S < 0 || fractions.W < 0 {
-		return fractions, math.Inf(1)
-	}
+	// if fractions.D < 0 || fractions.U < 0 || fractions.S < 0 || fractions.W < 0 {
+	// 	return fractions, math.Inf(1)
+	// }
 
 	// Нормализуем доли
-	sum := fractions.D + fractions.U + fractions.S + fractions.W
-	if sum > 0 {
-		fractions.D /= sum
-		fractions.U /= sum
-		fractions.S /= sum
-		fractions.W /= sum
-	}
+	// sum := fractions.D + fractions.U + fractions.S + fractions.W
+	// if sum > 0 {
+	// 	fractions.D /= sum
+	// 	fractions.U /= sum
+	// 	fractions.S /= sum
+	// 	fractions.W /= sum
+	// }
 
 	return fractions, result.Value
 }
@@ -150,6 +157,10 @@ func (o *MonteCarloOptimizer) generateRandomParameters(config *domain.Config) *d
 		DeltaU: randomInRange(config.DeltaRange.U[0], config.DeltaRange.U[1]),
 		DeltaS: randomInRange(config.DeltaRange.S[0], config.DeltaRange.S[1]),
 		DeltaW: randomInRange(config.DeltaRange.W[0], config.DeltaRange.W[1]),
+		MreD:   randomInRange(config.MRange.D[0], config.MRange.D[1]),
+		MreU:   randomInRange(config.MRange.U[0], config.MRange.U[1]),
+		MreS:   randomInRange(config.MRange.S[0], config.MRange.S[1]),
+		MreW:   randomInRange(config.MRange.W[0], config.MRange.W[1]),
 	}
 }
 
@@ -173,6 +184,10 @@ func (o *MonteCarloOptimizer) averageSolutions(samples []*domain.Solution) *doma
 		sumParams.DeltaU += sample.Parameters.DeltaU
 		sumParams.DeltaS += sample.Parameters.DeltaS
 		sumParams.DeltaW += sample.Parameters.DeltaW
+		sumParams.MreD += sample.Parameters.MreD
+		sumParams.MreU += sample.Parameters.MreU
+		sumParams.MreS += sample.Parameters.MreS
+		sumParams.MreW += sample.Parameters.MreW
 	}
 
 	avgResidual := sumResidual / float64(count)
@@ -191,6 +206,10 @@ func (o *MonteCarloOptimizer) averageSolutions(samples []*domain.Solution) *doma
 		DeltaU: sumParams.DeltaU / float64(count),
 		DeltaS: sumParams.DeltaS / float64(count),
 		DeltaW: sumParams.DeltaW / float64(count),
+		MreD:   sumParams.MreD / float64(count),
+		MreU:   sumParams.MreU / float64(count),
+		MreS:   sumParams.MreS / float64(count),
+		MreW:   sumParams.MreW / float64(count),
 	}
 
 	return &domain.Solution{

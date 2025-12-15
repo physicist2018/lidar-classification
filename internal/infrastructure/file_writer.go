@@ -12,6 +12,8 @@ import (
 	"lidar-classification/internal/domain"
 )
 
+type FmtFunc func(float64) string
+
 type TXTFileWriter struct {
 	logger *zap.Logger
 }
@@ -20,7 +22,7 @@ func NewTXTFileWriter(logger *zap.Logger) *TXTFileWriter {
 	return &TXTFileWriter{logger: logger}
 }
 
-func (w *TXTFileWriter) WriteMatrix(filename string, data *domain.MatrixData) error {
+func (w *TXTFileWriter) WriteMatrix(filename string, data *domain.MatrixData, formatter FmtFunc) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -39,7 +41,7 @@ func (w *TXTFileWriter) WriteMatrix(filename string, data *domain.MatrixData) er
 		heightLabel := strconv.FormatFloat(data.HeightLabels[i], 'f', 2, 64)
 		var rowStr []string
 		for _, val := range row {
-			rowStr = append(rowStr, strconv.FormatFloat(val, 'f', 6, 64))
+			rowStr = append(rowStr, formatter(val))
 		}
 		fmt.Fprintf(writer, "%s\t%s\n", heightLabel, strings.Join(rowStr, "\t"))
 	}

@@ -6,19 +6,22 @@ import (
 
 // Config представляет конфигурацию приложения
 type Config struct {
-	LR           LRCoeffs   `yaml:"LR"`
-	CV           CVCoeffs   `yaml:"CV"`
-	M            MCoeffs    `yaml:"m"`
-	DeltaRange   TypeRanges `yaml:"delta_range"`
-	GfRange      TypeRanges `yaml:"Gf_range"`
-	NSamples     int        `yaml:"NSamples"`
-	N1           int        `yaml:"N1"`
-	Epsilon      float64    `yaml:"epsilon"`
-	Workers      int        `yaml:"workers"`
-	LogLevel     string     `yaml:"log_level"`
-	Method       string     `yaml:"method"`
-	LogFile      string     `yaml:"log_file"`
-	CostFunction string     `yaml:"cost_function"`
+	LR LRCoeffs `yaml:"LR"`
+	CV CVCoeffs `yaml:"CV"`
+	//M            MCoeffs    `yaml:"m"`
+	MRange          TypeRanges `yaml:"m_range"`
+	DeltaRange      TypeRanges `yaml:"delta_range"`
+	GfRange         TypeRanges `yaml:"Gf_range"`
+	NSamples        int        `yaml:"NSamples"`
+	N1              int        `yaml:"N1"`
+	Epsilon         float64    `yaml:"epsilon"`
+	Workers         int        `yaml:"workers"`
+	LogLevel        string     `yaml:"log_level"`
+	Method          string     `yaml:"method"`
+	LogFile         string     `yaml:"log_file"`
+	CostFunction    string     `yaml:"cost_function"`
+	DecimalsDefault int        `yaml:"decimals_default"`
+	DecimalsGf      int        `yaml:"decimals_gf"`
 }
 
 func (c *Config) GetOptMethod() OptimizationMethod {
@@ -28,7 +31,7 @@ func (c *Config) GetOptMethod() OptimizationMethod {
 		return MethodNelderMead
 	case "gradient":
 		return MethodGradientDescent
-	case "simulated-annealing":
+	case "simann":
 		return MethodSimulatedAnnealing
 
 	default:
@@ -95,7 +98,7 @@ type Fractions struct {
 type Parameters struct {
 	GfD, GfU, GfS, GfW             float64
 	DeltaD, DeltaU, DeltaS, DeltaW float64
-	// MreD, MreU, MreS, MreW         float64
+	MreD, MreU, MreS, MreW         float64
 }
 
 // OptimizationMethod представляет метод оптимизации
