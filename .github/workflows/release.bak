@@ -22,6 +22,11 @@ jobs:
             suffix: linux-amd64
           - os: macos-latest
             goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
             suffix: darwin-amd64
           - os: windows-latest
             goos: windows
