@@ -11,16 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            goos: linux
-            suffix: linux-amd64
-          - os: macos-latest
-            goos: darwin
-            suffix: darwin-amd64
-          - os: windows-latest
-            goos: windows
-            suffix: windows-amd64.exe
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout code
@@ -31,17 +22,26 @@ jobs:
         with:
           go-version: "1.24"
 
-      - name: Build binary
+      - name: Build binaries
         run: |
           mkdir -p release
           cd cmd/classifier
-          go build -o "../../release/myapp-${{ matrix.suffix }}" .
+
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            go build -o ../../release/myapp-windows-amd64.exe .
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            go build -o ../../release/myapp-linux-amd64 .
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            go build -o ../../release/myapp-darwin-amd64 .
+          fi
+
+        shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: myapp-${{ matrix.suffix }}
-          path: release/myapp-${{ matrix.suffix }}
+          name: binaries-${{ runner.os }}
+          path: release/
 
   create-release:
     needs: build
@@ -52,6 +52,9 @@ jobs:
         with:
           path: artifacts/
 
+      - name: List downloaded artifacts
+        run: ls -la artifacts/ && find artifacts/ -type f
+
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -59,7 +62,9 @@ jobs:
           name: Release v${{ github.run_number }}
           body: |
             Automated release build.
-            Built from commit ${{ github.sha }}
+
+            **Changes:**
+            - Built from commit ${{ github.sha }}
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
