@@ -24,9 +24,11 @@ jobs:
 
       - name: Build binaries
         run: |
+          cd cmd/classifier
           GOOS=${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'macos-latest' && 'darwin' || 'windows' }} \
           GOARCH=amd64 \
-          go build -o release/myapp${{ matrix.os == 'windows-latest' && '.exe' || '' }} .
+          go build -o ../../release/myapp${{ matrix.os == 'windows-latest' && '.exe' || '' }} .
+          cd ../../
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
