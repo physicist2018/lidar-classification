@@ -1,9 +1,7 @@
 name: Release Build
 
-# --- ADD THE PERMISSIONS BLOCK HERE ---
 permissions:
   contents: write
-# --------------------------------------
 
 on:
   push:
@@ -17,14 +15,28 @@ jobs:
     strategy:
       matrix:
         include:
+          # Linux
           - os: ubuntu-latest
             goos: linux
+            goarch: amd64
             suffix: linux-amd64
+
+          # macOS Intel
           - os: macos-latest
             goos: darwin
+            goarch: amd64
             suffix: darwin-amd64
+
+          # macOS Apple Silicon (M1/M2/M3)
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+
+          # Windows
           - os: windows-latest
             goos: windows
+            goarch: amd64
             suffix: windows-amd64.exe
 
     steps:
@@ -40,7 +52,7 @@ jobs:
         run: |
           mkdir -p release
           cd cmd/classifier
-          go build -o "../../release/lidar-classifier-${{ matrix.suffix }}" .
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o "../../release/lidar-classifier-${{ matrix.suffix }}" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -65,6 +77,12 @@ jobs:
           body: |
             Automated release build.
             Built from commit ${{ github.sha }}
+
+            Supported platforms:
+            - Linux (x86_64)
+            - macOS Intel (x86_64)
+            - macOS Apple Silicon (ARM64/M1/M2/M3)
+            - Windows (x86_64)
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}

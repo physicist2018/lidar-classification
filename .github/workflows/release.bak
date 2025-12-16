@@ -1,5 +1,10 @@
 name: Release Build
 
+# --- ADD THE PERMISSIONS BLOCK HERE ---
+permissions:
+  contents: write
+# --------------------------------------
+
 on:
   push:
     branches:
@@ -11,7 +16,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            suffix: linux-amd64
+          - os: macos-latest
+            goos: darwin
+            suffix: darwin-amd64
+          - os: windows-latest
+            goos: windows
+            suffix: windows-amd64.exe
 
     steps:
       - name: Checkout code
@@ -22,26 +36,17 @@ jobs:
         with:
           go-version: "1.24"
 
-      - name: Build binaries
+      - name: Build binary
         run: |
           mkdir -p release
           cd cmd/classifier
-
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            go build -o ../../release/myapp-windows-amd64.exe .
-          elif [ "$RUNNER_OS" = "Linux" ]; then
-            go build -o ../../release/myapp-linux-amd64 .
-          elif [ "$RUNNER_OS" = "macOS" ]; then
-            go build -o ../../release/myapp-darwin-amd64 .
-          fi
-
-        shell: bash
+          go build -o "../../release/lidar-classifier-${{ matrix.suffix }}" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ runner.os }}
-          path: release/
+          name: lidar-classifier-${{ matrix.suffix }}
+          path: release/lidar-classifier-${{ matrix.suffix }}
 
   create-release:
     needs: build
@@ -52,9 +57,6 @@ jobs:
         with:
           path: artifacts/
 
-      - name: List downloaded artifacts
-        run: ls -la artifacts/ && find artifacts/ -type f
-
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -62,9 +64,7 @@ jobs:
           name: Release v${{ github.run_number }}
           body: |
             Automated release build.
-
-            **Changes:**
-            - Built from commit ${{ github.sha }}
+            Built from commit ${{ github.sha }}
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
