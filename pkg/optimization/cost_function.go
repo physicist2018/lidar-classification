@@ -34,11 +34,8 @@ func calcPenaltyForNegativeValues(x []float64) float64 {
 		if val < 0 {
 			penalty += 1000 * math.Pow(val, 2)
 		}
-		// if val > 1 {
-		// 	penalty += 10 * math.Pow(val-1, 2)
-		// }
+
 	}
-	//fmt.Println(penalty)
 	return penalty
 }
 
@@ -58,27 +55,17 @@ func calcSmoothPenalty(x []float64) float64 {
 // calculateResidual вычисляет основную невязку без штрафов за ограничения.
 // Возвращает: невязка (если критичные условия не выполнены).
 func (c *CostFunction) calculateResidual(x []float64) float64 {
-	nd, nu, ns, nw := x[0], x[1], x[2], x[3]
 
-	// Вычисление объёмов
-	vd := nd * c.conf.LR.D * c.conf.CV.D
-	vu := nu * c.conf.LR.U * c.conf.CV.U
-	vs := ns * c.conf.LR.S * c.conf.CV.S
-	vw := nw * c.conf.LR.W * c.conf.CV.W
-	vTotal := vd + vu + vs + vw
+	eqs := c.calculateEquations(x)
 
 	// Уравнения (остатки)
-	eq1 := nd + nu + ns + nw - 1.0
-	eq2 := c.deltaPrimeD*nd + c.deltaPrimeU*nu +
-		c.deltaPrimeS*ns + c.deltaPrimeW*nw - c.data.DeltaPrime
-	eq3 := c.params.GfD*nd + c.params.GfU*nu +
-		c.params.GfS*ns + c.params.GfW*nw - c.data.Gf
+	eq1 := eqs[0] - 1.0
+	eq2 := eqs[1] - c.data.DeltaPrime
+	eq3 := eqs[2] - c.data.Gf
 
 	var eq4 float64
-	if vTotal > 1e-8 {
-		mCalc := (c.params.MreD*vd + c.params.MreU*vu +
-			c.params.MreS*vs + c.params.MreW*vw) / vTotal
-		eq4 = mCalc - c.data.M
+	if eqs[3] > 0 {
+		eq4 = eqs[3] - c.data.M
 	} else {
 		eq4 = 0
 	}
@@ -98,6 +85,39 @@ func (c *CostFunction) calculateResidual(x []float64) float64 {
 	residual := math.Sqrt(eps1*eps1 + eps2*eps2 + eps3*eps3 + eps4*eps4)
 
 	return residual
+}
+
+// calculateEquations вычисляет значения параметров смеси
+func (c *CostFunction) calculateEquations(x []float64) []float64 {
+
+	result := CalculateEquations(x, &c.conf.LR, &c.conf.CV, c.params)
+
+	// nd, nu, ns, nw := x[0], x[1], x[2], x[3]
+
+	// // Вычисление объёмов
+	// vd := nd * c.conf.LR.D * c.conf.CV.D
+	// vu := nu * c.conf.LR.U * c.conf.CV.U
+	// vs := ns * c.conf.LR.S * c.conf.CV.S
+	// vw := nw * c.conf.LR.W * c.conf.CV.W
+	// vTotal := vd + vu + vs + vw
+
+	// // Уравнения (остатки)
+	// eq1 := nd + nu + ns + nw
+	// eq2 := c.deltaPrimeD*nd + c.deltaPrimeU*nu +
+	// 	c.deltaPrimeS*ns + c.deltaPrimeW*nw
+	// eq3 := c.params.GfD*nd + c.params.GfU*nu +
+	// 	c.params.GfS*ns + c.params.GfW*nw
+
+	// var eq4 float64
+	// if vTotal > 1e-8 {
+	// 	mCalc := (c.params.MreD*vd + c.params.MreU*vu +
+	// 		c.params.MreS*vs + c.params.MreW*vw) / vTotal
+	// 	eq4 = mCalc
+	// } else {
+	// 	eq4 = 0
+	// }
+
+	return result
 }
 
 // Value — основная функция стоимости. Проверяет ограничения и добавляет штрафы.
@@ -178,4 +198,39 @@ func (c *CostFunction) Gradient(x []float64) []float64 {
 		zap.Float64s("gradient", gradient))
 
 	return gradient
+}
+
+// calculateEquations вычисляет значения параметров смеси
+func CalculateEquations(x []float64, lrCoefs *domain.LRCoeffs, cvCoefs *domain.CVCoeffs, p *domain.Parameters) []float64 {
+	nd, nu, ns, nw := x[0], x[1], x[2], x[3]
+
+	// Вычисление объёмов
+	vd := nd * lrCoefs.D * cvCoefs.D
+	vu := nu * lrCoefs.U * cvCoefs.U
+	vs := ns * lrCoefs.S * cvCoefs.S
+	vw := nw * lrCoefs.W * cvCoefs.W
+	vTotal := vd + vu + vs + vw
+
+	deltaPrimeD := p.DeltaD / (1 + p.DeltaD)
+	deltaPrimeU := p.DeltaU / (1 + p.DeltaU)
+	deltaPrimeS := p.DeltaS / (1 + p.DeltaS)
+	deltaPrimeW := p.DeltaW / (1 + p.DeltaW)
+
+	// Уравнения (остатки)
+	eq1 := nd + nu + ns + nw
+	eq2 := deltaPrimeD*nd + deltaPrimeU*nu +
+		deltaPrimeS*ns + deltaPrimeW*nw
+	eq3 := p.GfD*nd + p.GfU*nu +
+		p.GfS*ns + p.GfW*nw
+
+	var eq4 float64
+	if vTotal > 1e-8 {
+		mCalc := (p.MreD*vd + p.MreU*vu +
+			p.MreS*vs + p.MreW*vw) / vTotal
+		eq4 = mCalc
+	} else {
+		eq4 = 0
+	}
+
+	return []float64{eq1, eq2, eq3, eq4}
 }

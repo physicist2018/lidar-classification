@@ -89,6 +89,10 @@ func main() {
 		"mre_u":     "mre_u.txt",
 		"mre_s":     "mre_s.txt",
 		"mre_w":     "mre_w.txt",
+		"diff_eq1":  "diff_eq1.txt",
+		"diff_eq2":  "diff_eq2.txt",
+		"diff_eq3":  "diff_eq3.txt",
+		"diff_eq4":  "diff_eq4.txt",
 	}
 
 	fmtGf := func(val float64) string {

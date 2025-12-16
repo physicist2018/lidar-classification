@@ -89,10 +89,15 @@ type Solution struct {
 	Fractions  Fractions
 	Parameters Parameters
 	IsValid    bool
+	Difference []float64
 }
 
 type Fractions struct {
 	D, U, S, W float64
+}
+
+func (f Fractions) Array() []float64 {
+	return []float64{f.D, f.U, f.S, f.W}
 }
 
 type Parameters struct {

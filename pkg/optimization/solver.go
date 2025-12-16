@@ -58,6 +58,12 @@ func (o *MonteCarloOptimizer) Solve(data *domain.PointData, config *domain.Confi
 
 	// Усредняем результаты
 	avg := o.averageSolutions(bestSamples)
+
+	avg.Difference = CalculateEquations(avg.Fractions.Array(), &config.LR, &config.CV, &avg.Parameters)
+	avg.Difference[0] = (1 - avg.Difference[0]) * 100.0
+	avg.Difference[1] = (data.DeltaPrime - avg.Difference[1]) / data.DeltaPrime * 100.0
+	avg.Difference[2] = (data.Gf - avg.Difference[2]) / data.Gf * 100.0
+	avg.Difference[3] = (data.M - avg.Difference[3]) / data.M * 100.0
 	o.logger.Info("best", zap.Any("X", avg))
 	return avg
 
@@ -82,7 +88,8 @@ func (o *MonteCarloOptimizer) generateRandomSample(data *domain.PointData, confi
 		Residual:   residual,
 		Fractions:  fractions,
 		Parameters: *params,
-		IsValid:    residual >= 0 && residual < config.Epsilon,
+
+		IsValid: residual >= 0 && residual < config.Epsilon,
 	}
 }
 
