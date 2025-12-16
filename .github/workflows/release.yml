@@ -12,16 +12,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            GOOS: linux
-            extension: ""
-          - os: macos-latest
-            GOOS: darwin
-            extension: ""
-          - os: windows-latest
-            GOOS: windows
-            extension: ".exe"
 
     steps:
       - name: Checkout code
@@ -34,33 +24,23 @@ jobs:
 
       - name: Build binaries
         run: |
-          # Создаем директорию для релизов
           mkdir -p release
-
           cd cmd/classifier
 
-          # Для Windows используем другой синтаксис переменных
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            go build -o ../../release/myapp.exe .
-          else
-            go build -o ../../release/myapp .
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            go build -o ../../release/myapp-windows-amd64.exe .
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            go build -o ../../release/myapp-linux-amd64 .
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            go build -o ../../release/myapp-darwin-amd64 .
           fi
 
-          cd ../../
-
-          # Переименовываем для Windows
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            mv release/myapp.exe release/myapp-windows-amd64.exe
-          elif [[ "${{ runner.os }}" == "Linux" ]]; then
-            mv release/myapp release/myapp-linux-amd64
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            mv release/myapp release/myapp-darwin-amd64
-          fi
+        shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ matrix.os }}
+          name: binaries-${{ runner.os }}
           path: release/
 
   create-release:
@@ -85,14 +65,7 @@ jobs:
 
             **Changes:**
             - Built from commit ${{ github.sha }}
-
-            **Files included:**
-            - myapp-linux-amd64 (Linux)
-            - myapp-darwin-amd64 (macOS)
-            - myapp-windows-amd64.exe (Windows)
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: |
-            artifacts/**/myapp-*
-            artifacts/**/myapp-*.exe
+          artifacts: artifacts/**/*
