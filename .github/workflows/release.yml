@@ -40,13 +40,13 @@ jobs:
         run: |
           mkdir -p release
           cd cmd/classifier
-          go build -o "../../release/myapp-${{ matrix.suffix }}" .
+          go build -o "../../release/lidar-classifier-${{ matrix.suffix }}" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: myapp-${{ matrix.suffix }}
-          path: release/myapp-${{ matrix.suffix }}
+          name: lidar-classifier-${{ matrix.suffix }}
+          path: release/lidar-classifier-${{ matrix.suffix }}
 
   create-release:
     needs: build
