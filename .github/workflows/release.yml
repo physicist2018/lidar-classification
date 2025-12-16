@@ -1,5 +1,10 @@
 name: Release Build
 
+# --- ADD THE PERMISSIONS BLOCK HERE ---
+permissions:
+  contents: write
+# --------------------------------------
+
 on:
   push:
     branches:
