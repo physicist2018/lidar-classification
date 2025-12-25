@@ -8,23 +8,18 @@ import (
 )
 
 type CostFunction struct {
-	logger                                             *zap.Logger
-	data                                               *domain.PointData
-	params                                             *domain.Parameters
-	deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW float64
-	conf                                               *domain.Config
+	logger *zap.Logger
+	data   *domain.PointData
+	params *domain.Parameters
+	conf   *domain.Config
 }
 
-func NewCostFunction(logger *zap.Logger, data *domain.PointData, params *domain.Parameters, deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW float64, conf *domain.Config) *CostFunction {
+func NewCostFunction(logger *zap.Logger, data *domain.PointData, params *domain.Parameters, conf *domain.Config) *CostFunction {
 	return &CostFunction{
-		logger:      logger,
-		data:        data,
-		params:      params,
-		deltaPrimeD: deltaPrimeD,
-		deltaPrimeU: deltaPrimeU,
-		deltaPrimeS: deltaPrimeS,
-		deltaPrimeW: deltaPrimeW,
-		conf:        conf,
+		logger: logger,
+		data:   data,
+		params: params,
+		conf:   conf,
 	}
 }
 
@@ -211,10 +206,10 @@ func CalculateEquations(x []float64, lrCoefs *domain.LRCoeffs, cvCoefs *domain.C
 	vw := nw * lrCoefs.W * cvCoefs.W
 	vTotal := vd + vu + vs + vw
 
-	deltaPrimeD := p.DeltaD / (1 + p.DeltaD)
-	deltaPrimeU := p.DeltaU / (1 + p.DeltaU)
-	deltaPrimeS := p.DeltaS / (1 + p.DeltaS)
-	deltaPrimeW := p.DeltaW / (1 + p.DeltaW)
+	deltaPrimeD := p.DeltaDPrime
+	deltaPrimeU := p.DeltaUPrime
+	deltaPrimeS := p.DeltaSPrime
+	deltaPrimeW := p.DeltaWPrime
 
 	// Уравнения (остатки)
 	eq1 := nd + nu + ns + nw
