@@ -72,14 +72,8 @@ func (o *MonteCarloOptimizer) Solve(data *domain.PointData, config *domain.Confi
 func (o *MonteCarloOptimizer) generateRandomSample(data *domain.PointData, config *domain.Config) *domain.Solution {
 	params := o.generateRandomParameters(config)
 
-	// Преобразуем delta в delta'
-	deltaPrimeD := params.DeltaD / (1 + params.DeltaD)
-	deltaPrimeU := params.DeltaU / (1 + params.DeltaU)
-	deltaPrimeS := params.DeltaS / (1 + params.DeltaS)
-	deltaPrimeW := params.DeltaW / (1 + params.DeltaW)
-
 	// Решаем систему уравнений
-	fractions, residual := o.solveSystem(data, params, deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW, config)
+	fractions, residual := o.solveSystem(data, params, config)
 
 	//&& residual <= config.Epsilon &&
 	// fractions.D >= 0 && fractions.U >= 0 && fractions.S >= 0 && fractions.W >= 0 &&
@@ -94,7 +88,6 @@ func (o *MonteCarloOptimizer) generateRandomSample(data *domain.PointData, confi
 }
 
 func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain.Parameters,
-	deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW float64,
 	config *domain.Config) (domain.Fractions, float64) {
 
 	var opt optimization.Optimizer
@@ -120,7 +113,6 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 		o.logger,
 		data,
 		params,
-		deltaPrimeD, deltaPrimeU, deltaPrimeS, deltaPrimeW,
 		config,
 	)
 
@@ -137,37 +129,27 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 		W: result.X[3],
 	}
 
-	// Если хотя бы одна доля отрицательная, result.Value делаем Inf()
-	// if fractions.D < 0 || fractions.U < 0 || fractions.S < 0 || fractions.W < 0 {
-	// 	return fractions, math.Inf(1)
-	// }
-
-	// Нормализуем доли
-	// sum := fractions.D + fractions.U + fractions.S + fractions.W
-	// if sum > 0 {
-	// 	fractions.D /= sum
-	// 	fractions.U /= sum
-	// 	fractions.S /= sum
-	// 	fractions.W /= sum
-	// }
-
 	return fractions, result.Value
 }
 
 func (o *MonteCarloOptimizer) generateRandomParameters(config *domain.Config) *domain.Parameters {
+	deltaD := randomInRange(config.DeltaRange.D[0], config.DeltaRange.D[1])
+	deltaU := randomInRange(config.DeltaRange.U[0], config.DeltaRange.U[1])
+	deltaS := randomInRange(config.DeltaRange.S[0], config.DeltaRange.S[1])
+	deltaW := randomInRange(config.DeltaRange.W[0], config.DeltaRange.W[1])
 	return &domain.Parameters{
-		GfD:    randomInRange(config.GfRange.D[0], config.GfRange.D[1]),
-		GfU:    randomInRange(config.GfRange.U[0], config.GfRange.U[1]),
-		GfS:    randomInRange(config.GfRange.S[0], config.GfRange.S[1]),
-		GfW:    randomInRange(config.GfRange.W[0], config.GfRange.W[1]),
-		DeltaD: randomInRange(config.DeltaRange.D[0], config.DeltaRange.D[1]),
-		DeltaU: randomInRange(config.DeltaRange.U[0], config.DeltaRange.U[1]),
-		DeltaS: randomInRange(config.DeltaRange.S[0], config.DeltaRange.S[1]),
-		DeltaW: randomInRange(config.DeltaRange.W[0], config.DeltaRange.W[1]),
-		MreD:   randomInRange(config.MRange.D[0], config.MRange.D[1]),
-		MreU:   randomInRange(config.MRange.U[0], config.MRange.U[1]),
-		MreS:   randomInRange(config.MRange.S[0], config.MRange.S[1]),
-		MreW:   randomInRange(config.MRange.W[0], config.MRange.W[1]),
+		GfD:         randomInRange(config.GfRange.D[0], config.GfRange.D[1]),
+		GfU:         randomInRange(config.GfRange.U[0], config.GfRange.U[1]),
+		GfS:         randomInRange(config.GfRange.S[0], config.GfRange.S[1]),
+		GfW:         randomInRange(config.GfRange.W[0], config.GfRange.W[1]),
+		DeltaDPrime: deltaD / (1 + deltaD),
+		DeltaUPrime: deltaU / (1 + deltaU),
+		DeltaSPrime: deltaS / (1 + deltaS),
+		DeltaWPrime: deltaW / (1 + deltaW),
+		MreD:        randomInRange(config.MRange.D[0], config.MRange.D[1]),
+		MreU:        randomInRange(config.MRange.U[0], config.MRange.U[1]),
+		MreS:        randomInRange(config.MRange.S[0], config.MRange.S[1]),
+		MreW:        randomInRange(config.MRange.W[0], config.MRange.W[1]),
 	}
 }
 
@@ -187,10 +169,10 @@ func (o *MonteCarloOptimizer) averageSolutions(samples []*domain.Solution) *doma
 		sumParams.GfU += sample.Parameters.GfU
 		sumParams.GfS += sample.Parameters.GfS
 		sumParams.GfW += sample.Parameters.GfW
-		sumParams.DeltaD += sample.Parameters.DeltaD
-		sumParams.DeltaU += sample.Parameters.DeltaU
-		sumParams.DeltaS += sample.Parameters.DeltaS
-		sumParams.DeltaW += sample.Parameters.DeltaW
+		sumParams.DeltaDPrime += sample.Parameters.DeltaDPrime
+		sumParams.DeltaUPrime += sample.Parameters.DeltaUPrime
+		sumParams.DeltaSPrime += sample.Parameters.DeltaSPrime
+		sumParams.DeltaWPrime += sample.Parameters.DeltaWPrime
 		sumParams.MreD += sample.Parameters.MreD
 		sumParams.MreU += sample.Parameters.MreU
 		sumParams.MreS += sample.Parameters.MreS
@@ -205,18 +187,18 @@ func (o *MonteCarloOptimizer) averageSolutions(samples []*domain.Solution) *doma
 		W: sumFractions.W / float64(count),
 	}
 	avgParams := domain.Parameters{
-		GfD:    sumParams.GfD / float64(count),
-		GfU:    sumParams.GfU / float64(count),
-		GfS:    sumParams.GfS / float64(count),
-		GfW:    sumParams.GfW / float64(count),
-		DeltaD: sumParams.DeltaD / float64(count),
-		DeltaU: sumParams.DeltaU / float64(count),
-		DeltaS: sumParams.DeltaS / float64(count),
-		DeltaW: sumParams.DeltaW / float64(count),
-		MreD:   sumParams.MreD / float64(count),
-		MreU:   sumParams.MreU / float64(count),
-		MreS:   sumParams.MreS / float64(count),
-		MreW:   sumParams.MreW / float64(count),
+		GfD:         sumParams.GfD / float64(count),
+		GfU:         sumParams.GfU / float64(count),
+		GfS:         sumParams.GfS / float64(count),
+		GfW:         sumParams.GfW / float64(count),
+		DeltaDPrime: sumParams.DeltaDPrime / float64(count),
+		DeltaUPrime: sumParams.DeltaUPrime / float64(count),
+		DeltaSPrime: sumParams.DeltaSPrime / float64(count),
+		DeltaWPrime: sumParams.DeltaWPrime / float64(count),
+		MreD:        sumParams.MreD / float64(count),
+		MreU:        sumParams.MreU / float64(count),
+		MreS:        sumParams.MreS / float64(count),
+		MreW:        sumParams.MreW / float64(count),
 	}
 
 	return &domain.Solution{

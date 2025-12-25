@@ -150,10 +150,10 @@ func (c *AerosolClassifier) updateResults(results map[string]*domain.MatrixData,
 	results["GF_u"].Data[i][j] = sol.Parameters.GfU
 	results["GF_s"].Data[i][j] = sol.Parameters.GfS
 	results["GF_w"].Data[i][j] = sol.Parameters.GfW
-	results["delta_d"].Data[i][j] = sol.Parameters.DeltaD / (1 - sol.Parameters.DeltaD)
-	results["delta_u"].Data[i][j] = sol.Parameters.DeltaU / (1 - sol.Parameters.DeltaU)
-	results["delta_s"].Data[i][j] = sol.Parameters.DeltaS / (1 - sol.Parameters.DeltaS)
-	results["delta_w"].Data[i][j] = sol.Parameters.DeltaW / (1 - sol.Parameters.DeltaW)
+	results["delta_d"].Data[i][j] = sol.Parameters.DeltaDPrime / (1 - sol.Parameters.DeltaDPrime)
+	results["delta_u"].Data[i][j] = sol.Parameters.DeltaUPrime / (1 - sol.Parameters.DeltaUPrime)
+	results["delta_s"].Data[i][j] = sol.Parameters.DeltaSPrime / (1 - sol.Parameters.DeltaSPrime)
+	results["delta_w"].Data[i][j] = sol.Parameters.DeltaWPrime / (1 - sol.Parameters.DeltaWPrime)
 	results["mre_d"].Data[i][j] = sol.Parameters.MreD
 	results["mre_u"].Data[i][j] = sol.Parameters.MreU
 	results["mre_s"].Data[i][j] = sol.Parameters.MreS

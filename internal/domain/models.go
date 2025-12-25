@@ -101,9 +101,9 @@ func (f Fractions) Array() []float64 {
 }
 
 type Parameters struct {
-	GfD, GfU, GfS, GfW             float64
-	DeltaD, DeltaU, DeltaS, DeltaW float64
-	MreD, MreU, MreS, MreW         float64
+	GfD, GfU, GfS, GfW                                 float64
+	DeltaDPrime, DeltaUPrime, DeltaSPrime, DeltaWPrime float64
+	MreD, MreU, MreS, MreW                             float64
 }
 
 // OptimizationMethod представляет метод оптимизации
