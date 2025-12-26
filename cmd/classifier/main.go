@@ -94,6 +94,25 @@ func main() {
 		"diff_eq3":  "diff_eq3.txt",
 		"diff_eq4":  "diff_eq4.txt",
 	}
+	// and histograms
+	histOutputFiles := map[string]string{
+		"n_d":     "hist-n_d.txt",
+		"n_u":     "hist-n_u.txt",
+		"n_s":     "hist-n_s.txt",
+		"n_w":     "hist-n_w.txt",
+		"GF_d":    "hist-GF_d.txt",
+		"GF_u":    "hist-GF_u.txt",
+		"GF_s":    "hist-GF_s.txt",
+		"GF_w":    "hist-GF_w.txt",
+		"delta_d": "hist-delta_d.txt",
+		"delta_u": "hist-delta_u.txt",
+		"delta_s": "hist-delta_s.txt",
+		"delta_w": "hist-delta_w.txt",
+		"mre_d":   "hist-mre_d.txt",
+		"mre_u":   "hist-mre_u.txt",
+		"mre_s":   "hist-mre_s.txt",
+		"mre_w":   "hist-mre_w.txt",
+	}
 
 	fmtGf := func(val float64) string {
 		return strconv.FormatFloat(val, 'f', config.DecimalsGf, 64)
@@ -119,6 +138,25 @@ func main() {
 			logger.Info("Successfully written result",
 				zap.String("file", filename))
 		}
+
+	}
+
+	for key, filename := range histOutputFiles {
+		tmp := results[key]
+		hist, err := tmp.Hist(0, 0, 20)
+		if err != nil {
+			logger.Error("Failed to calculate histogram",
+				zap.String("file", filename),
+				zap.Error(err))
+		} else if err := fileWriter.WriteHistogram(filename, &hist); err != nil {
+			logger.Error("Failed to write result",
+				zap.String("file", filename),
+				zap.Error(err))
+		} else {
+			logger.Info("Successfully written result",
+				zap.String("file", filename))
+		}
+
 	}
 
 	logger.Info("Aerosol classification completed successfully")

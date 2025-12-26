@@ -14,3 +14,7 @@ type FileWriter interface {
 type ConfigReader interface {
 	ReadConfig(path string) (*Config, error)
 }
+
+type Historgammer interface {
+	Hist(min, max float64, n int) ([]float64, []float64, error)
+}

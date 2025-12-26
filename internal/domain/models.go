@@ -106,6 +106,14 @@ type Parameters struct {
 	MreD, MreU, MreS, MreW                             float64
 }
 
+type ClassifyResults map[string]*MatrixData
+
+type Histogram struct {
+	Bins []float64
+	Vals []int
+	Len  int
+}
+
 // OptimizationMethod представляет метод оптимизации
 type OptimizationMethod int
 
