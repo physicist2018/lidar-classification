@@ -48,3 +48,25 @@ func (w *TXTFileWriter) WriteMatrix(filename string, data *domain.MatrixData, fo
 
 	return nil
 }
+
+func (w *TXTFileWriter) WriteHistogram(filename string, hist *domain.Histogram) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	defer writer.Flush()
+
+	// Записываем метки времени
+	timeLabels := strings.Join([]string{"X", "Y"}, "\t")
+	fmt.Fprintf(writer, "%s\n", timeLabels)
+
+	// Записываем данные с метками высот
+	for i := range hist.Len {
+		fmt.Fprintf(writer, "%.2e\t%10d\n", hist.Bins[i], hist.Vals[i])
+	}
+
+	return nil
+}

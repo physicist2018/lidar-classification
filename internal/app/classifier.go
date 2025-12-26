@@ -23,7 +23,7 @@ func NewAerosolClassifier(logger *zap.Logger, config *domain.Config) *AerosolCla
 	}
 }
 
-func (c *AerosolClassifier) ProcessMatrices(depData, flData, mreData *domain.MatrixData) map[string]*domain.MatrixData {
+func (c *AerosolClassifier) ProcessMatrices(depData, flData, mreData *domain.MatrixData) domain.ClassifyResults {
 	results := c.initializeResultMatrices(depData.Rows, depData.Cols)
 
 	var wg sync.WaitGroup
@@ -110,8 +110,8 @@ func (c *AerosolClassifier) validatePointData(data *domain.PointData) bool {
 		data.DeltaPrime > 0 && data.Gf > 0 && data.M > 0
 }
 
-func (c *AerosolClassifier) initializeResultMatrices(rows, cols int) map[string]*domain.MatrixData {
-	matrices := make(map[string]*domain.MatrixData)
+func (c *AerosolClassifier) initializeResultMatrices(rows, cols int) domain.ClassifyResults {
+	matrices := make(domain.ClassifyResults)
 	outputFiles := []string{
 		"residuals", "n_d", "n_u", "n_s", "n_w",
 		"GF_d", "GF_u", "GF_s", "GF_w",
