@@ -87,31 +87,6 @@ func (c *CostFunction) calculateEquations(x []float64) []float64 {
 
 	result := CalculateEquations(x, &c.conf.LR, &c.conf.CV, c.params)
 
-	// nd, nu, ns, nw := x[0], x[1], x[2], x[3]
-
-	// // Вычисление объёмов
-	// vd := nd * c.conf.LR.D * c.conf.CV.D
-	// vu := nu * c.conf.LR.U * c.conf.CV.U
-	// vs := ns * c.conf.LR.S * c.conf.CV.S
-	// vw := nw * c.conf.LR.W * c.conf.CV.W
-	// vTotal := vd + vu + vs + vw
-
-	// // Уравнения (остатки)
-	// eq1 := nd + nu + ns + nw
-	// eq2 := c.deltaPrimeD*nd + c.deltaPrimeU*nu +
-	// 	c.deltaPrimeS*ns + c.deltaPrimeW*nw
-	// eq3 := c.params.GfD*nd + c.params.GfU*nu +
-	// 	c.params.GfS*ns + c.params.GfW*nw
-
-	// var eq4 float64
-	// if vTotal > 1e-8 {
-	// 	mCalc := (c.params.MreD*vd + c.params.MreU*vu +
-	// 		c.params.MreS*vs + c.params.MreW*vw) / vTotal
-	// 	eq4 = mCalc
-	// } else {
-	// 	eq4 = 0
-	// }
-
 	return result
 }
 
@@ -119,12 +94,12 @@ func (c *CostFunction) calculateEquations(x []float64) []float64 {
 func (c *CostFunction) Value(x []float64) float64 {
 	// Проверка размерности
 	if len(x) != 4 {
-		return 1e10
+		return math.Inf(1)
 	}
 
 	nd, nu, ns, nw := x[0], x[1], x[2], x[3]
 
-	c.logger.Info("Input",
+	c.logger.Debug("Input",
 		zap.Float64("nd", nd),
 		zap.Float64("nu", nu),
 		zap.Float64("ns", ns),
@@ -146,15 +121,12 @@ func (c *CostFunction) Value(x []float64) float64 {
 	// Итоговый результат
 	total := residual + penalty + smoothPenalty
 
-	c.logger.Debug("Residuals",
-		zap.Float64("residual", residual),
-		zap.Float64("penalty", penalty),
-		zap.Float64("smPenalty", smoothPenalty),
-		zap.Float64("total", total))
-
-	// if penalty > 0 {
-	// 	return penalty
-	// }
+	// Логирование только при необходимости, например, при уровне trace
+	// c.logger.Debug("Residuals",
+	//	zap.Float64("residual", residual),
+	//	zap.Float64("penalty", penalty),
+	//	zap.Float64("smPenalty", smoothPenalty),
+	//	zap.Float64("total", total))
 
 	return total
 }
@@ -171,7 +143,7 @@ func (c *CostFunction) Gradient(x []float64) []float64 {
 	xMod := make([]float64, n)
 	copy(xMod, x)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		// Увеличиваем i-ю координату
 		xMod[i] += h
 		fxh := c.Value(xMod)
@@ -187,10 +159,10 @@ func (c *CostFunction) Gradient(x []float64) []float64 {
 		xMod[i] = x[i]
 	}
 
-	c.logger.Debug("Gradient computed",
-		zap.Float64s("input", x),
-		zap.Float64("base_value", fx),
-		zap.Float64s("gradient", gradient))
+	// c.logger.Debug("Gradient computed",
+	//	zap.Float64s("input", x),
+	//	zap.Float64("base_value", fx),
+	//	zap.Float64s("gradient", gradient))
 
 	return gradient
 }
