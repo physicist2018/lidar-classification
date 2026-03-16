@@ -18,6 +18,9 @@ type Config struct {
 	Workers         int        `yaml:"workers"`
 	LogLevel        string     `yaml:"log_level"`
 	Method          string     `yaml:"method"`
+	ToleranceNM     float64    `yaml:"tolerance_nm"`
+	ToleranceGD     float64    `yaml:"tolerance_gd"`
+	UseRMSprop      bool       `yaml:"use_rmsprop"`
 	LogFile         string     `yaml:"log_file"`
 	CostFunction    string     `yaml:"cost_function"`
 	DecimalsDefault int        `yaml:"decimals_default"`

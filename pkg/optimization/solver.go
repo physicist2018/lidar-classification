@@ -93,12 +93,12 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	switch config.GetOptMethod() {
 	case domain.MethodNelderMead:
 		nmConf := optimization.DefaultNelderMeadConfig()
-		nmConf.Tolerance = 1e-5
+		nmConf.Tolerance = config.ToleranceNM
 		opt = optimization.NewOptimizedNelderMead(nmConf)
 	case domain.MethodGradientDescent:
 		gdConf := optimization.DefaultGradientDescentConfig()
-		gdConf.Tolerance = 1e-5
-		gdConf.UseRMSprop = true
+		gdConf.Tolerance = config.ToleranceGD
+		gdConf.UseRMSprop = config.UseRMSprop
 		opt = optimization.NewAdaptiveGradientDescent(gdConf)
 	case domain.MethodSimulatedAnnealing:
 		saConf := optimization.DefaultSimulatedAnnealingConfig()
