@@ -34,7 +34,10 @@ func (w *TXTFileWriter) WriteMatrix(filename string, data *domain.MatrixData, fo
 
 	// Записываем метки времени
 	timeLabels := strings.Join(data.TimeLabels, "\t")
-	fmt.Fprintf(writer, "Alt/Time\t%s\n", timeLabels)
+	_, err = writer.WriteString("Alt/Time\t" + timeLabels + "\n")
+	if err != nil {
+		return err
+	}
 
 	// Записываем данные с метками высот
 	for i, row := range data.Data {
@@ -43,7 +46,11 @@ func (w *TXTFileWriter) WriteMatrix(filename string, data *domain.MatrixData, fo
 		for _, val := range row {
 			rowStr = append(rowStr, formatter(val))
 		}
-		fmt.Fprintf(writer, "%s\t%s\n", heightLabel, strings.Join(rowStr, "\t"))
+		line := heightLabel + "\t" + strings.Join(rowStr, "\t") + "\n"
+		_, err = writer.WriteString(line)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -61,11 +68,18 @@ func (w *TXTFileWriter) WriteHistogram(filename string, hist *domain.Histogram) 
 
 	// Записываем метки времени
 	timeLabels := strings.Join([]string{"X", "Y"}, "\t")
-	fmt.Fprintf(writer, "%s\n", timeLabels)
+	_, err = writer.WriteString(timeLabels + "\n")
+	if err != nil {
+		return err
+	}
 
 	// Записываем данные с метками высот
 	for i := range hist.Len {
-		fmt.Fprintf(writer, "%.2e\t%10d\n", hist.Bins[i], hist.Vals[i])
+		line := fmt.Sprintf("%.2e\t%10d\n", hist.Bins[i], hist.Vals[i])
+		_, err = writer.WriteString(line)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
