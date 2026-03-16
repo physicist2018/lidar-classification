@@ -35,3 +35,6 @@ method: nelder-mead
 log_file: log.txt
 decimals_default: 2
 decimals_gf: 6
+tolerance_nm: 1e-5
+tolerance_gd: 1e-5
+use_rmsprop: true

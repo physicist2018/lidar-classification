@@ -77,10 +77,10 @@ func (c *AerosolClassifier) worker(id int, tasks <-chan domain.ProcessingTask, r
 	defer wg.Done()
 
 	for task := range tasks {
-		c.logger.Debug("Processing point",
-			zap.Int("worker", id),
-			zap.Int("i", task.I),
-			zap.Int("j", task.J))
+		// c.logger.Debug("Processing point",
+		//	zap.Int("worker", id),
+		//	zap.Int("i", task.I),
+		//	zap.Int("j", task.J))
 
 		solution := c.optimizer.Solve(task.Data, task.Config)
 

@@ -10,9 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	HUGE_VAL = 1000000000.0
-)
+// HUGE_VAL is deprecated, use math.Inf(1) instead
+// const (
+// 	HUGE_VAL = 1000000000.0
+// )
 
 type MonteCarloOptimizer struct {
 	logger *zap.Logger
@@ -75,9 +76,6 @@ func (o *MonteCarloOptimizer) generateRandomSample(data *domain.PointData, confi
 	// Решаем систему уравнений
 	fractions, residual := o.solveSystem(data, params, config)
 
-	//&& residual <= config.Epsilon &&
-	// fractions.D >= 0 && fractions.U >= 0 && fractions.S >= 0 && fractions.W >= 0 &&
-	// math.Abs(fractions.D+fractions.U+fractions.S+fractions.W-1.0) <= 0.05
 	return &domain.Solution{
 		Residual:   residual,
 		Fractions:  fractions,
@@ -91,18 +89,16 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	config *domain.Config) (domain.Fractions, float64) {
 
 	var opt optimization.Optimizer
-	//nmConf := optimization.DefaultNelderMeadConfig()
-	//opt := optimization.NewOptimizedNelderMead(nmConf)
 
 	switch config.GetOptMethod() {
 	case domain.MethodNelderMead:
 		nmConf := optimization.DefaultNelderMeadConfig()
-		nmConf.Tolerance = 1e-5
+		nmConf.Tolerance = config.ToleranceNM
 		opt = optimization.NewOptimizedNelderMead(nmConf)
 	case domain.MethodGradientDescent:
 		gdConf := optimization.DefaultGradientDescentConfig()
-		gdConf.Tolerance = 1e-5
-		gdConf.UseRMSprop = true
+		gdConf.Tolerance = config.ToleranceGD
+		gdConf.UseRMSprop = config.UseRMSprop
 		opt = optimization.NewAdaptiveGradientDescent(gdConf)
 	case domain.MethodSimulatedAnnealing:
 		saConf := optimization.DefaultSimulatedAnnealingConfig()
@@ -120,7 +116,7 @@ func (o *MonteCarloOptimizer) solveSystem(data *domain.PointData, params *domain
 	initial := []float64{0.25, 0.25, 0.25, 0.25}
 	result := opt.Optimize(costFunc, initial)
 
-	o.logger.Debug("Optimization result:", zap.Any("result", result))
+	// o.logger.Debug("Optimization result:", zap.Any("result", result))
 
 	fractions := domain.Fractions{
 		D: result.X[0],
